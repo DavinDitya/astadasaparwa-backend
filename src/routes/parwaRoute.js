@@ -1,0 +1,23 @@
+const express = require("express");
+const router = express.Router();
+const {
+  getAllParwa,
+  searchParwa,
+  getParwaById,
+  createParwa,
+  updateParwa,
+  deleteParwa,
+} = require("../controllers/parwaController");
+const { verifyToken } = require("../middleware/verifyToken");
+
+// Public routes
+router.get("/", getAllParwa); // GET /api/parwa?page=1&limit=10
+router.get("/search", searchParwa); // GET /api/parwa/search?q=...
+router.get("/:id", getParwaById); // GET /api/parwa/:id
+
+// Admin routes
+router.post("/", verifyToken, createParwa); // POST /api/parwa
+router.put("/:id", verifyToken, updateParwa); // PUT /api/parwa/:id
+router.delete("/:id", verifyToken, deleteParwa); // DELETE /api/parwa/:id
+
+module.exports = router;
