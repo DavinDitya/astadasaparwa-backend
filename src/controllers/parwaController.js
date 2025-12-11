@@ -34,6 +34,29 @@ exports.getAllParwa = async (req, res) => {
   }
 };
 
+exports.getParwaCategories = async (req, res) => {
+  try {
+    const categories = await prisma.parwa.findMany({
+      distinct: ["book"], // INI KUNCINYA: Hanya ambil data jika kolom 'book' berbeda
+      select: {
+        book: true, // Kita cuma butuh nama bukunya saja
+      },
+      orderBy: {
+        id: "asc", // Urutkan berdasarkan ID agar urutan Parwanya benar (Adi Parwa dulu)
+      },
+    });
+
+    // Hasilnya akan seperti: [{ book: "Adi Parva" }, { book: "Sabha Parva" }, ...]
+    res.json({
+      message: "Kategori Parwa berhasil diambil",
+      data: categories,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ✅ GET detail Parwa by ID
 exports.getParwaById = async (req, res) => {
   try {
@@ -141,6 +164,71 @@ exports.deleteParwa = async (req, res) => {
     await prisma.parwa.delete({ where: { id } });
 
     res.json({ message: "Parwa berhasil dihapus" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getSectionsByBook = async (req, res) => {
+  try {
+    const { bookName } = req.params;
+
+    const sections = await prisma.parwa.findMany({
+      where: {
+        book: bookName, // Filter buku (misal: Adi Parva)
+      },
+      distinct: ["section"], // KUNCI: Hanya ambil nama section yang unik
+      select: {
+        section: true,
+        sub_parva: true, // Kita ambil juga sub_parva buat info tambahan
+        // id: true <-- Jangan ambil ID, karena 1 section punya banyak ID ayat
+      },
+      orderBy: {
+        id: "asc", // Urutkan sesuai urutan cerita
+      },
+    });
+
+    res.json({
+      message: `Daftar Section untuk ${bookName} berhasil diambil`,
+      total: sections.length,
+      data: sections,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getContentBySection = async (req, res) => {
+  try {
+    const { bookName, sectionName } = req.params;
+
+    const items = await prisma.parwa.findMany({
+      where: {
+        book: bookName,
+        section: sectionName
+      },
+      select: {
+        id: true,
+        judul: true, // "Adi Parva - Section I"
+        isi: true,   // Teks ceritanya
+        isi_id: true,
+        url: true
+      },
+      orderBy: {
+        id: 'asc' // Urutkan biar alurnya benar
+      }
+    });
+
+    if (items.length === 0) {
+        return res.status(404).json({ message: "Data tidak ditemukan" });
+    }
+
+    res.json({
+      message: "Isi berhasil diambil",
+      data: items
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

@@ -32,6 +32,8 @@ async function importParwa() {
             judul: entry.judul || null,
             url: entry.url || null,
             isi: entry.isi || "",
+            isi_id: entry.isi_id || "",
+            createdAt: entry.createdAt || new Date(),
           },
         });
       }

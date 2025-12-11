@@ -16,7 +16,8 @@ model Parwa {
   section     String?                                
   judul       String?                                
   url         String?                                
-  isi         String   @db.LongText                  
+  isi         String   @db.LongText
+  isi_id      String   @db.LongText                  
   createdAt   DateTime @default(now())              
 }
 

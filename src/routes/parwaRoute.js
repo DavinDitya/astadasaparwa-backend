@@ -7,13 +7,20 @@ const {
   createParwa,
   updateParwa,
   deleteParwa,
+  getParwaCategories,
+  getSectionsByBook,
+  getContentBySection,
 } = require("../controllers/parwaController");
 const { verifyToken } = require("../middleware/verifyToken");
 
 // Public routes
 router.get("/", getAllParwa); // GET /api/parwa?page=1&limit=10
+router.get("/categories", getParwaCategories);
 router.get("/search", searchParwa); // GET /api/parwa/search?q=...
+router.get("/content/:bookName/:sectionName", getContentBySection);
+router.get("/read/:bookName/:sectionName", getContentBySection);
 router.get("/:id", getParwaById); // GET /api/parwa/:id
+router.get("/sections/:bookName", getSectionsByBook);
 
 // Admin routes
 router.post("/", verifyToken, createParwa); // POST /api/parwa
