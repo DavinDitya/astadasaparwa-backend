@@ -21,7 +21,7 @@ router.get("/profile", verifyToken, async (req, res) => {
 
     res.status(200).json({
       message: "Profil pengguna berhasil diambil",
-      user,
+      data: user,
     });
   } catch (error) {
     console.error("Error saat mengambil profil:", error);

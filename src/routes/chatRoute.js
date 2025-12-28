@@ -3,8 +3,9 @@ const router = express.Router();
 const chatController = require("../controllers/chatController");
 const { verifyToken } = require("../middleware/verifyToken");
 
-// POST /api/chat/ask
-// Kita pasang 'verifyToken' agar hanya user yang sudah login bisa chat
-router.post("/ask", verifyToken, chatController.askChatbot);
+// ROUTE CHAT
+router.get("/conversations", verifyToken, chatController.getConversations); // Sidebar
+router.get("/messages/:conversationId", verifyToken, chatController.getChatMessages); // Isi Chat
+router.post("/ask", verifyToken, chatController.askChatbot); // Tanya
 
 module.exports = router;

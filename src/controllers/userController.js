@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 // ✅ UPDATE PROFILE
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // didapat dari verifyToken
+    const userId = req.user.id;
     const { name, email, password } = req.body;
 
     // Pastikan user ada
@@ -32,8 +32,7 @@ exports.updateProfile = async (req, res) => {
         id: true,
         name: true,
         email: true,
-        createdAt: true,
-        updatedAt: true,
+        createdAt: true
       },
     });
 

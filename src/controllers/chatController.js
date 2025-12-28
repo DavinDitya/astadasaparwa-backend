@@ -1,46 +1,88 @@
 const axios = require("axios");
-
-// URL Server Python (FastAPI)
-// Karena Node.js dan Python jalan di laptop yang sama, kita pakai localhost
-// Pastikan portnya 8000 (sesuai settingan Python Anda tadi)
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const PYTHON_API_URL = "http://127.0.0.1:8000/ask";
 
+// 1. AMBIL LIST SIDEBAR (Judul Percakapan)
+exports.getConversations = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const conversations = await prisma.conversation.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' }, // Yang terbaru paling atas
+      select: { id: true, title: true }
+    });
+    res.json({ data: conversations });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal memuat sidebar" });
+  }
+};
+
+// 2. AMBIL ISI CHAT (Berdasarkan ID Percakapan)
+exports.getChatMessages = async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId);
+    const chats = await prisma.chat.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, message: true, role: true, createdAt: true }
+    });
+    res.json({ data: chats });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal memuat pesan" });
+  }
+};
+
+// 3. KIRIM PESAN (Bisa Baru atau Lanjut)
 exports.askChatbot = async (req, res) => {
   try {
-    const { question } = req.body;
+    // conversationId bisa NULL (kalau chat baru)
+    let { question, history, conversationId } = req.body;
+    const userId = req.user.id;
 
-    // 1. Validasi input dari Android
-    if (!question) {
-      return res.status(400).json({ message: "Pertanyaan tidak boleh kosong" });
+    if (!question) return res.status(400).json({ message: "Pertanyaan kosong" });
+
+    // A. JIKA CHAT BARU -> Buat Sesi Dulu
+    if (!conversationId) {
+      // Buat judul otomatis dari 30 karakter pertama pertanyaan
+      const title = question.substring(0, 30) + (question.length > 30 ? "..." : "");
+      
+      const newConv = await prisma.conversation.create({
+        data: { userId, title }
+      });
+      conversationId = newConv.id;
     }
 
-    console.log(`🤖 Mengirim pertanyaan ke Python: "${question}"`);
-
-    // 2. Oper pertanyaan ke Python (Microservice)
-    const response = await axios.post(PYTHON_API_URL, {
-      question: question,
-      top_k: 4, // Opsional: jumlah referensi yang mau diambil
+    // B. Simpan Pertanyaan User
+    await prisma.chat.create({
+      data: { conversationId, message: question, role: "user" }
+    });
+    
+    // Update waktu percakapan agar naik ke atas di sidebar
+    await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { updatedAt: new Date() }
     });
 
-    // 3. Ambil jawaban dari Python
-    const pythonData = response.data;
+    // C. Kirim ke Python
+    const response = await axios.post(PYTHON_API_URL, {
+      question, history: history || [], top_k: 10
+    });
+    const botAnswer = response.data.answer;
 
-    // 4. Kirim balik ke Android
-    // pythonData isinya biasanya: { "answer": "...", "retrieved": [...] }
+    // D. Simpan Jawaban Bot
+    await prisma.chat.create({
+      data: { conversationId, message: botAnswer, role: "bot" }
+    });
+
     res.json({
       message: "Sukses",
-      data: pythonData,
+      conversationId: conversationId, // Kirim balik ID agar Android tau ini sesi mana
+      data: response.data
     });
+
   } catch (error) {
-    console.error("❌ Error menghubungkan ke Python Chatbot:", error.message);
-
-    // Cek apakah errornya karena Python mati?
-    if (error.code === "ECONNREFUSED") {
-      return res.status(503).json({
-        message: "Layanan Chatbot sedang tidak aktif (Python server mati).",
-      });
-    }
-
-    res.status(500).json({ message: "Terjadi kesalahan pada server chatbot" });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
