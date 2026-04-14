@@ -31,8 +31,12 @@ app.use("/api/user", userRoutes);
 app.use("/api/admin/users", userAdminRoutes);
 app.use("/api/chat", chatRoutes);
 
-const port = process.env.PORT || 4000;
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`📡 Listening on all interfaces (0.0.0.0)`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  const port = process.env.PORT || 4000;
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`📡 Listening on all interfaces (0.0.0.0)`);
+  });
+}
+
+module.exports = app;

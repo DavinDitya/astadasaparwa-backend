@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "prisma:migrate": "npx prisma migrate dev --name init",
     "prisma:generate": "npx prisma generate",
-    "import:parwa": "node src/scripts/import_parwa.js"
+    "import:parwa": "node src/scripts/import_parwa.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
