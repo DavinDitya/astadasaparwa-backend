@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const PYTHON_API_URL = "http://127.0.0.1:8000/ask";
+const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://127.0.0.1:8000/ask";
 
 // 1. AMBIL LIST SIDEBAR (Judul Percakapan)
 exports.getConversations = async (req, res) => {
