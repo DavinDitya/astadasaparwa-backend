@@ -34,16 +34,13 @@ exports.getAllParwa = async (req, res) => {
   }
 };
 
-// [FUNGSI BARU] Mengambil daftar nama Versi
+// ✅ [FUNGSI BARU] Mengambil daftar nama Versi
 exports.getVersions = async (req, res) => {
   try {
-    // Tarik semua data dari tabel Version yang baru kita buat
     const versions = await prisma.version.findMany({
       orderBy: { id: "asc" },
     });
     
-    // Ubah formatnya jadi array string biasa biar Kotlin gampang bacanya
-    // Hasil: ["Kisari Mohan Ganguli", "Versi B"]
     const data = versions.map(v => v.name);
     
     res.json({ data: data });
@@ -53,21 +50,18 @@ exports.getVersions = async (req, res) => {
   }
 };
 
-// [UPDATE FUNGSI LAMA] Tarik kategori Parwa berdasarkan Versi
+// ✅ [UPDATE] Tarik kategori Parwa berdasarkan Versi
 exports.getParwaCategories = async (req, res) => {
   try {
-    const { version } = req.query; // Tangkap param dari URL (?version=Kisari...)
+    const { version } = req.query; 
 
-    let filter = {}; // Default: tanpa filter
+    let filter = {}; 
 
-    // Kalau ada klik versi dari HP Android
     if (version) {
-      // Cari dulu ID versinya di tabel Version
       const versionData = await prisma.version.findUnique({
         where: { name: version }
       });
       
-      // Kalau ketemu, pasang filter ID-nya
       if (versionData) {
         filter = { versionId: versionData.id };
       }
@@ -203,22 +197,33 @@ exports.deleteParwa = async (req, res) => {
   }
 };
 
+// ✅ [UPDATE] GET Sections by Book & Version
 exports.getSectionsByBook = async (req, res) => {
   try {
     const { bookName } = req.params;
+    const { version } = req.query; // Tangkap param versi dari URL
+
+    let versionFilter = {};
+
+    if (version) {
+      const v = await prisma.version.findUnique({ where: { name: version } });
+      if (v) {
+        versionFilter = { versionId: v.id };
+      }
+    }
 
     const sections = await prisma.parwa.findMany({
       where: {
-        book: bookName, // Filter buku (misal: Adi Parva)
+        book: bookName,
+        ...versionFilter // Filter berdasarkan buku DAN versi
       },
-      distinct: ["section"], // KUNCI: Hanya ambil nama section yang unik
+      distinct: ["section"], 
       select: {
         section: true,
-        sub_parva: true, // Kita ambil juga sub_parva buat info tambahan
-        // id: true <-- Jangan ambil ID, karena 1 section punya banyak ID ayat
+        sub_parva: true, 
       },
       orderBy: {
-        id: "asc", // Urutkan sesuai urutan cerita
+        id: "asc", 
       },
     });
 
@@ -233,24 +238,36 @@ exports.getSectionsByBook = async (req, res) => {
   }
 };
 
+// ✅ [UPDATE] GET Content by Section & Version
 exports.getContentBySection = async (req, res) => {
   try {
     const { bookName, sectionName } = req.params;
+    const { version } = req.query; // Tangkap param versi dari URL
+
+    let versionFilter = {};
+
+    if (version) {
+      const v = await prisma.version.findUnique({ where: { name: version } });
+      if (v) {
+        versionFilter = { versionId: v.id };
+      }
+    }
 
     const items = await prisma.parwa.findMany({
       where: {
         book: bookName,
-        section: sectionName
+        section: sectionName,
+        ...versionFilter // Filter berdasarkan buku, section, DAN versi
       },
       select: {
         id: true,
-        judul: true, // "Adi Parva - Section I"
-        isi: true,   // Teks ceritanya
+        judul: true, 
+        isi: true,   
         isi_id: true,
         url: true
       },
       orderBy: {
-        id: 'asc' // Urutkan biar alurnya benar
+        id: 'asc' 
       }
     });
 
