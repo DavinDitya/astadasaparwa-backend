@@ -1,5 +1,3 @@
-// File: prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,16 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// [TABEL BARU] Tabel Master untuk Versi/Penerjemah
+model Version {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // Contoh: "Kisari Mohan Ganguli", "Versi A"
+  createdAt DateTime @default(now())
+
+  parwas    Parwa[]  // Relasi: 1 Versi memiliki banyak Parwa
+}
+
 model Parwa {
-  id          Int      @id @default(autoincrement())
-  book        String                                
-  sub_parva   String?                                
-  section     String?                                
-  judul       String?                                
-  url         String?                                
-  isi         String   @db.LongText
-  isi_id      String   @db.LongText                  
-  createdAt   DateTime @default(now())              
+  id        Int      @id @default(autoincrement())
+  book      String                                  
+  sub_parva String?                                 
+  section   String?                                 
+  judul     String?                                 
+  url       String?                                 
+  isi       String   @db.LongText
+  isi_id    String   @db.LongText                 
+  createdAt DateTime @default(now())              
+
+  // [TAMBAHAN] Relasi ke tabel Version
+  versionId Int      @default(1)
+  version   Version  @relation(fields: [versionId], references: [id])
 }
 
 model User {
@@ -32,10 +43,10 @@ model User {
   conversations Conversation[]
 }
 
-model Conversation{
+model Conversation {
   id        Int      @id @default(autoincrement())
   userId    Int
-  title     String   @default("Percakapan Baru") // Judul sesi
+  title     String   @default("Percakapan Baru")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -44,11 +55,11 @@ model Conversation{
 }
 
 model Chat {
-  id                Int      @id @default(autoincrement())
-  conversationId    Int
-  message           String   @db.LongText
-  role              String
-  createdAt         DateTime @default(now())
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  message        String       @db.LongText
+  role           String
+  createdAt      DateTime     @default(now())
 
-  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

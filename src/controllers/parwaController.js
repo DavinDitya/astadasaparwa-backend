@@ -34,19 +34,52 @@ exports.getAllParwa = async (req, res) => {
   }
 };
 
+// [FUNGSI BARU] Mengambil daftar nama Versi
+exports.getVersions = async (req, res) => {
+  try {
+    // Tarik semua data dari tabel Version yang baru kita buat
+    const versions = await prisma.version.findMany({
+      orderBy: { id: "asc" },
+    });
+    
+    // Ubah formatnya jadi array string biasa biar Kotlin gampang bacanya
+    // Hasil: ["Kisari Mohan Ganguli", "Versi B"]
+    const data = versions.map(v => v.name);
+    
+    res.json({ data: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// [UPDATE FUNGSI LAMA] Tarik kategori Parwa berdasarkan Versi
 exports.getParwaCategories = async (req, res) => {
   try {
+    const { version } = req.query; // Tangkap param dari URL (?version=Kisari...)
+
+    let filter = {}; // Default: tanpa filter
+
+    // Kalau ada klik versi dari HP Android
+    if (version) {
+      // Cari dulu ID versinya di tabel Version
+      const versionData = await prisma.version.findUnique({
+        where: { name: version }
+      });
+      
+      // Kalau ketemu, pasang filter ID-nya
+      if (versionData) {
+        filter = { versionId: versionData.id };
+      }
+    }
+
     const categories = await prisma.parwa.findMany({
-      distinct: ["book"], // INI KUNCINYA: Hanya ambil data jika kolom 'book' berbeda
-      select: {
-        book: true, // Kita cuma butuh nama bukunya saja
-      },
-      orderBy: {
-        id: "asc", // Urutkan berdasarkan ID agar urutan Parwanya benar (Adi Parwa dulu)
-      },
+      where: filter,
+      distinct: ["book"], 
+      select: { book: true },
+      orderBy: { id: "asc" }, 
     });
 
-    // Hasilnya akan seperti: [{ book: "Adi Parva" }, { book: "Sabha Parva" }, ...]
     res.json({
       message: "Kategori Parwa berhasil diambil",
       data: categories,
