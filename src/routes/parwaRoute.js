@@ -20,9 +20,9 @@ router.get("/categories", getParwaCategories);
 router.get("/search", searchParwa); // GET /api/parwa/search?q=...
 router.get("/content/:bookName/:sectionName", getContentBySection);
 router.get("/read/:bookName/:sectionName", getContentBySection);
-router.get("/:id", getParwaById); // GET /api/parwa/:id
 router.get("/sections/:bookName", getSectionsByBook);
 router.get("/versions", getVersions)
+router.get("/:id", getParwaById); // GET /api/parwa/:id
 
 // Admin routes
 router.post("/", verifyToken, createParwa); // POST /api/parwa
