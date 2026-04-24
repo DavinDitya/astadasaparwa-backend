@@ -1,15 +1,15 @@
+//chatController.js
 const axios = require("axios");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://127.0.0.1:8000/ask";
 
-// 1. AMBIL LIST SIDEBAR (Judul Percakapan)
 exports.getConversations = async (req, res) => {
   try {
     const userId = req.user.id;
     const conversations = await prisma.conversation.findMany({
       where: { userId },
-      orderBy: { updatedAt: 'desc' }, // Yang terbaru paling atas
+      orderBy: { updatedAt: 'desc' }, 
       select: { id: true, title: true }
     });
     res.json({ data: conversations });
@@ -18,7 +18,6 @@ exports.getConversations = async (req, res) => {
   }
 };
 
-// 2. AMBIL ISI CHAT (Berdasarkan ID Percakapan)
 exports.getChatMessages = async (req, res) => {
   try {
     const conversationId = parseInt(req.params.conversationId);
@@ -33,51 +32,47 @@ exports.getChatMessages = async (req, res) => {
   }
 };
 
-// 3. KIRIM PESAN (Bisa Baru atau Lanjut)
 exports.askChatbot = async (req, res) => {
   try {
-    // conversationId bisa NULL (kalau chat baru)
-    let { question, history, conversationId } = req.body;
+    // --- [PERBAIKAN 1] Tangkap 'mode' dari Android ---
+    let { question, history, conversationId, mode } = req.body;
     const userId = req.user.id;
 
     if (!question) return res.status(400).json({ message: "Pertanyaan kosong" });
 
-    // A. JIKA CHAT BARU -> Buat Sesi Dulu
     if (!conversationId) {
-      // Buat judul otomatis dari 30 karakter pertama pertanyaan
       const title = question.substring(0, 30) + (question.length > 30 ? "..." : "");
-      
       const newConv = await prisma.conversation.create({
         data: { userId, title }
       });
       conversationId = newConv.id;
     }
 
-    // B. Simpan Pertanyaan User
     await prisma.chat.create({
       data: { conversationId, message: question, role: "user" }
     });
     
-    // Update waktu percakapan agar naik ke atas di sidebar
     await prisma.conversation.update({
         where: { id: conversationId },
         data: { updatedAt: new Date() }
     });
 
-    // C. Kirim ke Python
+    // --- [PERBAIKAN 2] Kirim 'mode' ke Python Railway ---
     const response = await axios.post(PYTHON_API_URL, {
-      question, history: history || [], top_k: 10
+      question, 
+      history: history || [], 
+      top_k: 10,
+      mode: mode || "detail" // Tambahkan ini!
     });
     const botAnswer = response.data.answer;
 
-    // D. Simpan Jawaban Bot
     await prisma.chat.create({
       data: { conversationId, message: botAnswer, role: "bot" }
     });
 
     res.json({
       message: "Sukses",
-      conversationId: conversationId, // Kirim balik ID agar Android tau ini sesi mana
+      conversationId: conversationId, 
       data: response.data
     });
 
