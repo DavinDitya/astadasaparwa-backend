@@ -81,3 +81,44 @@ exports.askChatbot = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.updateConversationTitle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title } = req.body;
+    
+    if (!title || title.trim() === "") {
+      return res.status(400).json({ message: "Judul tidak boleh kosong" });
+    }
+
+    await prisma.conversation.update({
+      where: { id: parseInt(id) },
+      data: { title }
+    });
+    res.json({ message: "Judul percakapan berhasil diperbarui" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Gagal memperbarui judul" });
+  }
+};
+
+exports.deleteConversation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Hapus semua chat di dalam conversation ini terlebih dahulu (agar tidak error relasi database)
+    await prisma.chat.deleteMany({
+      where: { conversationId: parseInt(id) }
+    });
+    
+    // Baru hapus conversation utamanya
+    await prisma.conversation.delete({
+      where: { id: parseInt(id) }
+    });
+    
+    res.json({ message: "Percakapan berhasil dihapus" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Gagal menghapus percakapan" });
+  }
+};
