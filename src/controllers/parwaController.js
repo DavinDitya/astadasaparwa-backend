@@ -50,7 +50,7 @@ exports.getVersions = async (req, res) => {
   }
 };
 
-// ✅ [UPDATE] Tarik kategori Parwa berdasarkan Versi
+// ✅ [UPDATE] Tarik kategori Parwa berdasarkan Versi + Link Gambar
 exports.getParwaCategories = async (req, res) => {
   try {
     const { version } = req.query; 
@@ -74,9 +74,20 @@ exports.getParwaCategories = async (req, res) => {
       orderBy: { id: "asc" }, 
     });
 
+    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+
+    const dataWithImages = categories.map(item => {
+      const formatFileName = item.book.toLowerCase().replace(/\s+/g, '-') + '.png';
+      
+      return {
+        book: item.book,
+        imageUrl: `${baseUrl}/${formatFileName}` 
+      };
+    });
+
     res.json({
       message: "Kategori Parwa berhasil diambil",
-      data: categories,
+      data: dataWithImages,
     });
   } catch (err) {
     console.error(err);

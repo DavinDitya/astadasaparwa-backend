@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 app.use((req, res, next) => {
   console.log(`\n📥 [REQUEST MASUK] ${req.method} ${req.url}`);
