@@ -61,7 +61,7 @@ exports.askChatbot = async (req, res) => {
     const response = await axios.post(PYTHON_API_URL, {
       question, 
       history: history || [], 
-      top_k: 10,
+      top_k: 3,
       mode: mode || "detail" // Tambahkan ini!
     });
     const botAnswer = response.data.answer;
