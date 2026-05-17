@@ -5,23 +5,23 @@ const nodemailer = require("nodemailer");
 
 const prisma = new PrismaClient();
 
+// Hapus konfigurasi Gmail yang lama, ganti dengan Brevo Port 2525
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,            // Ganti ke 587
-  secure: false,        // WAJIB false jika menggunakan port 587
-  requireTLS: true,     // Memaksa koneksi dienkripsi
-  family: 4,
+  host: "smtp-relay.brevo.com",
+  port: 2525, // <--- Ini adalah jalur rahasia yang lolos dari blokir Railway
+  secure: false, 
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER, // Diambil dari Railway (Email Brevo)
+    pass: process.env.EMAIL_PASS, // Diambil dari Railway (SMTP Key Brevo)
   },
 });
-// Cek koneksi email saat server baru menyala
+
+// Tetap biarkan fungsi verify ini agar kita bisa memantau log-nya
 transporter.verify((error, success) => {
   if (error) {
-    console.error("❌ [NODEMAILER ERROR]: Gagal terhubung ke Gmail!", error);
+    console.error("❌ [NODEMAILER ERROR]: Gagal terhubung ke Brevo!", error);
   } else {
-    console.log("✅ [NODEMAILER READY]: Server siap mengirim email OTP!");
+    console.log("✅ [NODEMAILER READY]: Server siap mengirim email OTP via Port 2525!");
   }
 });
 
